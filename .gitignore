@@ -1,3 +1,6 @@
 .terraform/
 *.tfstate
 *.tfstate.*
+.venv/
+__pycache__/
+*.pyc
