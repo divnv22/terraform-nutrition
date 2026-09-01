@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: nutrition-backend
-          image: acrdananutritiondev.azurecr.io/nutrition-backend:final-mvp-v5
+          image: acrdananutritiondev.azurecr.io/nutrition-backend:multi-user-v1
           imagePullPolicy: Always
 
           command:
@@ -50,6 +50,15 @@ spec:
                 secretKeyRef:
                   name: openai-api-key
                   key: OPENAI_API_KEY
+
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nutrition-auth-secret
+                  key: SESSION_SECRET
+
+            - name: SESSION_COOKIE_SECURE
+              value: "true"
 
           volumeMounts:
             - name: tls
