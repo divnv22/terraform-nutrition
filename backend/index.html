@@ -1,0 +1,2363 @@
+<!DOCTYPE html>
+<html lang="ro">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Nutrition AI Tracker</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f6f8;
+            color: #222;
+        }
+
+        .container {
+            max-width: 1150px;
+            margin: 0 auto;
+            padding: 30px 20px 60px;
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            margin-top: 0;
+            color: #666;
+        }
+
+        .bmi-card {
+            background: white;
+            border-radius: 16px;
+            padding: 15px 18px;
+            min-width: 220px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+            border-left: 6px solid #bbb;
+        }
+
+        .bmi-label {
+            color: #777;
+            font-size: 12px;
+        }
+
+        .bmi-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+
+        .bmi-category {
+            margin-top: 3px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .bmi-info {
+            color: #888;
+            font-size: 11px;
+            margin-top: 5px;
+        }
+
+        .height-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .height-row input {
+            width: 75px;
+            padding: 6px;
+        }
+
+        .height-row span {
+            font-size: 12px;
+            color: #777;
+        }
+
+        .card {
+            background: white;
+            border-radius: 18px;
+            padding: 24px;
+            margin-top: 22px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+        }
+
+        .card h2 {
+            margin-top: 0;
+        }
+
+        .top-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #555;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            border: 1px solid #d8dce2;
+            border-radius: 10px;
+            padding: 11px 12px;
+            font-size: 15px;
+        }
+
+        textarea {
+            min-height: 170px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #777;
+        }
+
+        .state-box {
+            margin-top: 18px;
+            padding: 16px;
+            background: #f7f8fa;
+            border-radius: 14px;
+        }
+
+        .state-box textarea {
+            min-height: 90px;
+            background: white;
+        }
+
+        .state-help {
+            color: #888;
+            font-size: 12px;
+            margin-top: 7px;
+        }
+
+        .ai-box {
+            margin-top: 18px;
+        }
+
+        .photo-box {
+            margin-top: 16px;
+            padding: 15px;
+            border-radius: 12px;
+            background: #f7f8fa;
+        }
+
+        .photo-help {
+            font-size: 12px;
+            color: #777;
+            margin-top: 7px;
+        }
+
+        .selected-files {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        button {
+            border: none;
+            border-radius: 10px;
+            padding: 12px 18px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .primary-button {
+            background: #222;
+            color: white;
+        }
+
+        .secondary-button {
+            background: #eceef2;
+            color: #222;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+
+        .analyze-button {
+            width: 100%;
+            margin-top: 18px;
+            padding: 15px;
+            font-size: 16px;
+        }
+
+        .status {
+            margin-top: 14px;
+            padding: 12px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .status.info {
+            display: block;
+            background: #eef3ff;
+        }
+
+        .status.success {
+            display: block;
+            background: #eaf8ee;
+        }
+
+        .status.error {
+            display: block;
+            background: #ffecec;
+        }
+
+        .preview {
+            display: none;
+            margin-top: 24px;
+            border-top: 1px solid #eee;
+            padding-top: 22px;
+        }
+
+        .preview.show {
+            display: block;
+        }
+
+        .preview-section {
+            margin-bottom: 22px;
+        }
+
+        .preview-item {
+            background: #f7f8fa;
+            border-radius: 12px;
+            padding: 13px 15px;
+            margin-bottom: 8px;
+        }
+
+        .preview-item strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .nutrition-line {
+            margin-top: 6px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .supplement-profile {
+            margin-top: 7px;
+            color: #666;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .estimate-note {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .empty {
+            color: #999;
+            font-style: italic;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+        }
+
+        .summary-box {
+            background: #f7f8fa;
+            padding: 18px;
+            border-radius: 14px;
+        }
+
+        .summary-label {
+            color: #777;
+            font-size: 13px;
+        }
+
+        .summary-value {
+            font-size: 25px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .verdict-box {
+            margin-top: 18px;
+            padding: 20px;
+            border-radius: 14px;
+            background: #f7f8fa;
+            border-left: 5px solid #222;
+        }
+
+        .verdict-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .verdict-text {
+            line-height: 1.6;
+            color: #444;
+        }
+
+        .range-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f7f8fa;
+            border-radius: 14px;
+        }
+
+        .range-field {
+            min-width: 160px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .chart-card {
+            height: 310px;
+            background: white;
+            border-radius: 14px;
+            padding: 15px;
+            border: 1px solid #eee;
+        }
+
+        .chart-card h3 {
+            margin-top: 0;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 240px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 24px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .data-table th {
+            text-align: left;
+            background: #f7f8fa;
+            padding: 12px;
+            border-bottom: 2px solid #ddd;
+            white-space: nowrap;
+        }
+
+        .data-table td {
+            padding: 11px 12px;
+            border-bottom: 1px solid #eee;
+            white-space: nowrap;
+        }
+
+        .data-table tbody tr:hover {
+            background: #fafafa;
+        }
+
+        .activity-minus {
+            color: #278545;
+            font-weight: bold;
+        }
+
+        .after-activity {
+            color: #278545;
+            font-weight: bold;
+        }
+
+        .state-cell {
+            white-space: normal !important;
+            min-width: 240px;
+            max-width: 400px;
+            line-height: 1.45;
+        }
+
+        .supplement-table td {
+            vertical-align: top;
+        }
+
+        .supplement-name {
+            font-weight: bold;
+        }
+
+        .section-description {
+            color: #777;
+            margin-top: -5px;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+
+        @media (max-width: 800px) {
+
+            .header-row {
+                flex-direction: column;
+            }
+
+            .bmi-card {
+                width: 100%;
+            }
+
+            .top-grid,
+            .summary-grid,
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+
+    <div class="header-row">
+
+        <div>
+
+            <h1>✨ Nutrition AI</h1>
+
+            <p class="subtitle">
+                Jurnal personal de nutriție, stare, suplimente și activitate.
+            </p>
+
+        </div>
+
+
+        <div
+            class="bmi-card"
+            id="bmiCard"
+        >
+
+            <div class="bmi-label">
+                BODY MASS INDEX
+            </div>
+
+            <div
+                id="bmiValue"
+                class="bmi-value"
+            >
+                —
+            </div>
+
+            <div
+                id="bmiCategory"
+                class="bmi-category"
+            >
+                Introdu greutatea
+            </div>
+
+            <div class="bmi-info">
+                Indicator orientativ bazat pe greutate și înălțime.
+            </div>
+
+            <div class="height-row">
+
+                <input
+                    type="number"
+                    id="height"
+                    min="100"
+                    max="230"
+                    placeholder="Height"
+                    oninput="updateBMI()"
+                >
+
+                <span>cm</span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <h2>Today</h2>
+
+
+        <div class="top-grid">
+
+            <div>
+
+                <label for="date">
+                    Date
+                </label>
+
+                <input
+                    type="date"
+                    id="date"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label for="weight">
+                    Weight (kg)
+                </label>
+
+                <input
+                    type="number"
+                    id="weight"
+                    step="0.1"
+                    oninput="updateBMI()"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label for="glucose">
+                    Glucose (mg/dL)
+                </label>
+
+                <input
+                    type="number"
+                    id="glucose"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label for="notes">
+                    Short note
+                </label>
+
+                <input
+                    type="text"
+                    id="notes"
+                    placeholder="Optional"
+                >
+
+            </div>
+
+        </div>
+
+
+        <div class="state-box">
+
+            <label for="stateOfDay">
+                🧠 State of the day
+            </label>
+
+            <textarea
+                id="stateOfDay"
+                placeholder="Exemplu: Azi mă simt obosită, am dormit prost, energie mai scăzută..."
+            ></textarea>
+
+            <div class="state-help">
+                Este jurnalul tău personal. Această observație este salvată ca atare și NU este trimisă către analiza AI.
+            </div>
+
+        </div>
+
+
+        <div class="ai-box">
+
+            <label for="journalText">
+                🥗 Food, drinks, supplements & activity
+            </label>
+
+            <textarea
+                id="journalText"
+                placeholder="Exemplu: Dimineață am luat Curalin 1 capsulă. Îl folosesc pentru..., de obicei îl iau după cină. La mic dejun am mâncat..."
+            ></textarea>
+
+        </div>
+
+
+        <div class="photo-box">
+
+            <label for="foodPhotos">
+                📷 Photos
+            </label>
+
+            <input
+                type="file"
+                id="foodPhotos"
+                accept="image/*"
+                multiple
+                onchange="showSelectedFiles()"
+            >
+
+            <div class="photo-help">
+                Poți selecta până la 12 poze. Textul de mai sus oferă context fotografiilor.
+            </div>
+
+            <div
+                id="selectedFiles"
+                class="selected-files"
+            ></div>
+
+        </div>
+
+
+        <button
+            class="primary-button analyze-button"
+            id="analyzeButton"
+            onclick="analyzeJournal()"
+        >
+            ✨ Analyze journal
+        </button>
+
+
+        <div
+            id="status"
+            class="status"
+        ></div>
+
+
+        <div
+            id="preview"
+            class="preview"
+        >
+
+            <h2>AI understood</h2>
+
+
+            <div class="preview-section">
+
+                <h3>🥗 Food</h3>
+
+                <div id="foodPreview"></div>
+
+            </div>
+
+
+            <div class="preview-section">
+
+                <h3>💧 Liquids</h3>
+
+                <div id="liquidPreview"></div>
+
+            </div>
+
+
+            <div class="preview-section">
+
+                <h3>💊 Supplements</h3>
+
+                <div id="supplementPreview"></div>
+
+            </div>
+
+
+            <div class="preview-section">
+
+                <h3>🚶 Activity</h3>
+
+                <div id="activityPreview"></div>
+
+            </div>
+
+
+            <div class="button-row">
+
+                <button
+                    class="secondary-button"
+                    onclick="editJournal()"
+                >
+                    Edit journal
+                </button>
+
+                <button
+                    class="primary-button"
+                    id="saveButton"
+                    onclick="confirmAndSave()"
+                >
+                    ✓ Confirm & Save
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <h2>Today's estimated summary</h2>
+
+
+        <div class="summary-grid">
+
+            <div class="summary-box">
+
+                <div class="summary-label">
+                    🔥 Calories
+                </div>
+
+                <div
+                    class="summary-value"
+                    id="calorieTotal"
+                >
+                    0 kcal
+                </div>
+
+            </div>
+
+
+            <div class="summary-box">
+
+                <div class="summary-label">
+                    💪 Protein
+                </div>
+
+                <div
+                    class="summary-value"
+                    id="proteinTotal"
+                >
+                    0 g
+                </div>
+
+            </div>
+
+
+            <div class="summary-box">
+
+                <div class="summary-label">
+                    💧 Liquids
+                </div>
+
+                <div
+                    class="summary-value"
+                    id="liquidTotal"
+                >
+                    0 ml
+                </div>
+
+            </div>
+
+
+            <div class="summary-box">
+
+                <div class="summary-label">
+                    🚶 Activities
+                </div>
+
+                <div
+                    class="summary-value"
+                    id="activityCount"
+                >
+                    0
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="verdict-box">
+
+            <div class="verdict-title">
+                🤖 AI daily verdict
+            </div>
+
+            <div
+                class="verdict-text"
+                id="dailyVerdict"
+            >
+                Analizează jurnalul pentru a primi o evaluare nutrițională a zilei.
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <h2>Dashboard</h2>
+
+
+        <div class="range-row">
+
+            <div class="range-field">
+
+                <label for="rangeStart">
+                    From
+                </label>
+
+                <input
+                    type="date"
+                    id="rangeStart"
+                >
+
+            </div>
+
+
+            <div class="range-field">
+
+                <label for="rangeEnd">
+                    To
+                </label>
+
+                <input
+                    type="date"
+                    id="rangeEnd"
+                >
+
+            </div>
+
+
+            <button
+                class="primary-button"
+                onclick="loadDashboard()"
+            >
+                Apply range
+            </button>
+
+
+            <button
+                class="secondary-button"
+                onclick="setCurrentMonth()"
+            >
+                This month
+            </button>
+
+
+            <button
+                class="secondary-button"
+                onclick="showAllDates()"
+            >
+                All
+            </button>
+
+        </div>
+
+
+        <div class="dashboard-grid">
+
+            <div class="chart-card">
+
+                <h3>⚖️ Weight trend</h3>
+
+                <div class="chart-container">
+
+                    <canvas id="weightChart"></canvas>
+
+                </div>
+
+            </div>
+
+
+            <div class="chart-card">
+
+                <h3>🩸 Glucose trend</h3>
+
+                <div class="chart-container">
+
+                    <canvas id="glucoseChart"></canvas>
+
+                </div>
+
+            </div>
+
+
+            <div class="chart-card">
+
+                <h3>🔥 Calories per day</h3>
+
+                <div class="chart-container">
+
+                    <canvas id="calorieChart"></canvas>
+
+                </div>
+
+            </div>
+
+
+            <div class="chart-card">
+
+                <h3>💪 Protein per day</h3>
+
+                <div class="chart-container">
+
+                    <canvas id="proteinChart"></canvas>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+            <h3>📋 Daily values</h3>
+
+            <p class="section-description">
+                “After activity” = calorii din alimente și băuturi minus activitatea fizică înregistrată. Nu reprezintă metabolismul total al corpului.
+            </p>
+
+            <table class="data-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>Date</th>
+                        <th>Weight</th>
+                        <th>Glucose</th>
+                        <th>Intake</th>
+                        <th>Protein</th>
+                        <th>Liquids</th>
+                        <th>Activity</th>
+                        <th>After activity</th>
+                        <th>State of the day</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="dailyTableBody"></tbody>
+
+            </table>
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+            <h3>💊 Supplement control</h3>
+
+            <p class="section-description">
+                Profilul suplimentului + istoricul administrărilor tale.
+            </p>
+
+            <table class="data-table supplement-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>Supplement</th>
+                        <th>Purpose</th>
+                        <th>Usual dose</th>
+                        <th>Usual timing</th>
+                        <th>Last dose</th>
+                        <th>Last timing</th>
+                        <th>First taken</th>
+                        <th>Last taken</th>
+                        <th>Times logged</th>
+                        <th>Notes</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="supplementTableBody"></tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    let interpretedJournal = null;
+
+    let weightChart = null;
+    let glucoseChart = null;
+    let calorieChart = null;
+    let proteinChart = null;
+
+
+    document.getElementById("date").value =
+        new Date().toISOString().split("T")[0];
+
+
+    function safeNumber(value) {
+
+        if (
+            value === null ||
+            value === undefined ||
+            Number.isNaN(Number(value))
+        ) {
+            return 0;
+        }
+
+        return Number(value);
+    }
+
+
+    function safeText(value) {
+
+        if (
+            value === null ||
+            value === undefined ||
+            value === ""
+        ) {
+            return "—";
+        }
+
+        return value;
+    }
+
+
+    function showStatus(message, type) {
+
+        const status =
+            document.getElementById("status");
+
+        status.className =
+            "status " + type;
+
+        status.textContent =
+            message;
+    }
+
+
+    function emptyMessage() {
+
+        return `
+            <div class="empty">
+                Nothing detected
+            </div>
+        `;
+    }
+
+
+    function showSelectedFiles() {
+
+        const input =
+            document.getElementById(
+                "foodPhotos"
+            );
+
+        const output =
+            document.getElementById(
+                "selectedFiles"
+            );
+
+        if (!input.files.length) {
+
+            output.textContent = "";
+
+            return;
+        }
+
+        if (input.files.length > 12) {
+
+            output.textContent =
+                "⚠️ Maximum 12 photos per analysis.";
+
+            return;
+        }
+
+        const names =
+            Array.from(input.files)
+                .map(file => file.name);
+
+        output.innerHTML =
+            `<strong>${input.files.length} photo(s) selected:</strong><br>` +
+            names.join("<br>");
+
+    }
+
+
+    function updateBMI() {
+
+        const weight =
+            Number(
+                document.getElementById(
+                    "weight"
+                ).value
+            );
+
+        const height =
+            Number(
+                document.getElementById(
+                    "height"
+                ).value
+            );
+
+        const card =
+            document.getElementById(
+                "bmiCard"
+            );
+
+        const category =
+            document.getElementById(
+                "bmiCategory"
+            );
+
+        if (height) {
+
+            localStorage.setItem(
+                "nutritionHeight",
+                height
+            );
+        }
+
+        if (!weight || !height) {
+
+            document.getElementById(
+                "bmiValue"
+            ).textContent = "—";
+
+            category.textContent =
+                "Introdu greutatea";
+
+            card.style.borderLeftColor =
+                "#bbb";
+
+            category.style.color =
+                "#777";
+
+            return;
+        }
+
+        const heightMeters =
+            height / 100;
+
+        const bmi =
+            weight /
+            (
+                heightMeters *
+                heightMeters
+            );
+
+        document.getElementById(
+            "bmiValue"
+        ).textContent =
+            bmi.toFixed(1);
+
+
+        let label;
+        let color;
+
+
+        if (bmi < 18.5) {
+
+            label = "Subponderal";
+            color = "#3f7fa6";
+
+        } else if (bmi < 25) {
+
+            label = "Greutate normală";
+            color = "#2d8a4b";
+
+        } else if (bmi < 30) {
+
+            label = "Supraponderal";
+            color = "#c28a18";
+
+        } else if (bmi < 35) {
+
+            label = "Obezitate grad I";
+            color = "#c76620";
+
+        } else if (bmi < 40) {
+
+            label = "Obezitate grad II";
+            color = "#b64932";
+
+        } else {
+
+            label = "Obezitate grad III";
+            color = "#9d3030";
+        }
+
+
+        category.textContent =
+            label;
+
+        category.style.color =
+            color;
+
+        card.style.borderLeftColor =
+            color;
+
+    }
+
+
+    function initializeHeight() {
+
+        const storedHeight =
+            localStorage.getItem(
+                "nutritionHeight"
+            );
+
+        if (storedHeight) {
+
+            document.getElementById(
+                "height"
+            ).value =
+                storedHeight;
+        }
+
+    }
+
+
+    function renderPreview(data) {
+
+        interpretedJournal = data;
+
+        const foods =
+            data.foods || [];
+
+        const liquids =
+            data.liquids || [];
+
+        const supplements =
+            data.supplements || [];
+
+        const activities =
+            data.activities || [];
+
+
+        document.getElementById(
+            "foodPreview"
+        ).innerHTML =
+
+            foods.length
+
+                ? foods.map(item => `
+
+                    <div class="preview-item">
+
+                        <strong>
+                            ${item.food_name}
+                        </strong>
+
+                        <div>
+
+                            ${item.meal_type || ""}
+
+                            ${
+                                item.quantity
+                                    ? " · " + item.quantity
+                                    : ""
+                            }
+
+                        </div>
+
+                        <div class="nutrition-line">
+
+                            🔥 ≈ ${safeNumber(item.calories)} kcal
+
+                            ·
+
+                            💪 ≈ ${safeNumber(item.protein)} g proteină
+
+                        </div>
+
+                        <div class="estimate-note">
+                            Estimare AI
+                        </div>
+
+                    </div>
+
+                `).join("")
+
+                : emptyMessage();
+
+
+        document.getElementById(
+            "liquidPreview"
+        ).innerHTML =
+
+            liquids.length
+
+                ? liquids.map(item => `
+
+                    <div class="preview-item">
+
+                        <strong>
+                            ${item.drink_name}
+                        </strong>
+
+                        <div>
+
+                            ${
+                                item.amount_ml !== null &&
+                                item.amount_ml !== undefined
+
+                                    ? item.amount_ml + " ml"
+
+                                    : ""
+                            }
+
+                        </div>
+
+                        <div class="nutrition-line">
+
+                            🔥 ≈ ${safeNumber(item.calories)} kcal
+
+                        </div>
+
+                        <div class="estimate-note">
+                            Estimare AI
+                        </div>
+
+                    </div>
+
+                `).join("")
+
+                : emptyMessage();
+
+
+        document.getElementById(
+            "supplementPreview"
+        ).innerHTML =
+
+            supplements.length
+
+                ? supplements.map(item => `
+
+                    <div class="preview-item">
+
+                        <strong>
+                            ${item.supplement_name}
+                        </strong>
+
+                        <div>
+                            Azi:
+                            ${item.quantity || "cantitate nespecificată"}
+                            ${
+                                item.time_of_day
+                                    ? " · " + item.time_of_day
+                                    : ""
+                            }
+                        </div>
+
+                        <div class="supplement-profile">
+
+                            ${
+                                item.purpose
+                                    ? "<div><b>Scop:</b> " + item.purpose + "</div>"
+                                    : ""
+                            }
+
+                            ${
+                                item.usual_dose
+                                    ? "<div><b>Doză uzuală:</b> " + item.usual_dose + "</div>"
+                                    : ""
+                            }
+
+                            ${
+                                item.usual_timing
+                                    ? "<div><b>Moment uzual:</b> " + item.usual_timing + "</div>"
+                                    : ""
+                            }
+
+                            ${
+                                item.profile_notes
+                                    ? "<div><b>Observații:</b> " + item.profile_notes + "</div>"
+                                    : ""
+                            }
+
+                        </div>
+
+                    </div>
+
+                `).join("")
+
+                : emptyMessage();
+
+
+        document.getElementById(
+            "activityPreview"
+        ).innerHTML =
+
+            activities.length
+
+                ? activities.map(item => `
+
+                    <div class="preview-item">
+
+                        <strong>
+                            ${item.activity_type}
+                        </strong>
+
+                        ${
+                            item.distance_km !== null &&
+                            item.distance_km !== undefined
+
+                                ? item.distance_km + " km"
+
+                                : ""
+                        }
+
+                    </div>
+
+                `).join("")
+
+                : emptyMessage();
+
+
+        const foodCalories =
+            foods.reduce(
+                (sum, item) =>
+                    sum + safeNumber(item.calories),
+                0
+            );
+
+        const liquidCalories =
+            liquids.reduce(
+                (sum, item) =>
+                    sum + safeNumber(item.calories),
+                0
+            );
+
+        const totalProtein =
+            foods.reduce(
+                (sum, item) =>
+                    sum + safeNumber(item.protein),
+                0
+            );
+
+        const totalLiquids =
+            liquids.reduce(
+                (sum, item) =>
+                    sum + safeNumber(item.amount_ml),
+                0
+            );
+
+
+        document.getElementById(
+            "calorieTotal"
+        ).textContent =
+            Math.round(
+                foodCalories +
+                liquidCalories
+            ) + " kcal";
+
+
+        document.getElementById(
+            "proteinTotal"
+        ).textContent =
+            totalProtein.toFixed(1) + " g";
+
+
+        document.getElementById(
+            "liquidTotal"
+        ).textContent =
+            Math.round(totalLiquids) + " ml";
+
+
+        document.getElementById(
+            "activityCount"
+        ).textContent =
+            activities.length;
+
+
+        document.getElementById(
+            "dailyVerdict"
+        ).textContent =
+            data.verdict ||
+            "AI nu a generat un verdict pentru această zi.";
+
+
+        document.getElementById(
+            "preview"
+        ).classList.add("show");
+
+
+        document.getElementById(
+            "saveButton"
+        ).disabled = false;
+
+    }
+
+
+    async function analyzeJournal() {
+
+        const text =
+            document.getElementById(
+                "journalText"
+            ).value.trim();
+
+        const imageInput =
+            document.getElementById(
+                "foodPhotos"
+            );
+
+        if (
+            !text &&
+            !imageInput.files.length
+        ) {
+
+            showStatus(
+                "Scrie jurnalul, adaugă fotografii sau folosește ambele.",
+                "error"
+            );
+
+            return;
+        }
+
+        if (imageInput.files.length > 12) {
+
+            showStatus(
+                "Poți analiza maximum 12 fotografii odată.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        const button =
+            document.getElementById(
+                "analyzeButton"
+            );
+
+        button.disabled = true;
+
+
+        let description =
+            "AI analizează jurnalul...";
+
+        if (
+            text &&
+            imageInput.files.length
+        ) {
+
+            description =
+                `AI combină textul cu ${imageInput.files.length} fotografie/fotografii...`;
+
+        } else if (imageInput.files.length) {
+
+            description =
+                `AI analizează ${imageInput.files.length} fotografie/fotografii...`;
+        }
+
+
+        showStatus(
+            description,
+            "info"
+        );
+
+
+        try {
+
+            const formData =
+                new FormData();
+
+
+            formData.append(
+                "text",
+                text
+            );
+
+
+            for (
+                const file
+                of imageInput.files
+            ) {
+
+                formData.append(
+                    "images",
+                    file
+                );
+            }
+
+
+            const response =
+                await fetch(
+                    "/ai/analyze",
+                    {
+                        method: "POST",
+                        body: formData
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                const errorData =
+                    await response.json();
+
+                throw new Error(
+                    errorData.detail ||
+                    "AI analysis failed."
+                );
+            }
+
+
+            const result =
+                await response.json();
+
+
+            renderPreview(
+                result.interpreted
+            );
+
+
+            let successMessage =
+                "✓ AI analysis complete.";
+
+            if (
+                result.text_used &&
+                result.image_count > 0
+            ) {
+
+                successMessage =
+                    `✓ Text + ${result.image_count} fotografie/fotografii analizate împreună.`;
+
+            } else if (
+                result.image_count > 0
+            ) {
+
+                successMessage =
+                    `✓ ${result.image_count} fotografie/fotografii analizate.`;
+
+            } else {
+
+                successMessage =
+                    "✓ Textul a fost analizat.";
+            }
+
+
+            showStatus(
+                successMessage +
+                " Verifică estimările înainte de salvare.",
+                "success"
+            );
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            showStatus(
+                "Analiza AI a eșuat: " +
+                error.message,
+                "error"
+            );
+
+        } finally {
+
+            button.disabled = false;
+        }
+
+    }
+
+
+    function editJournal() {
+
+        document.getElementById(
+            "journalText"
+        ).focus();
+
+        showStatus(
+            "Modifică jurnalul sau fotografiile și analizează din nou.",
+            "info"
+        );
+
+    }
+
+
+    async function confirmAndSave() {
+
+        if (!interpretedJournal) {
+
+            showStatus(
+                "Nu există încă o interpretare AI.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        const saveButton =
+            document.getElementById(
+                "saveButton"
+            );
+
+        saveButton.disabled = true;
+
+
+        const date =
+            document.getElementById(
+                "date"
+            ).value;
+
+        const weightValue =
+            document.getElementById(
+                "weight"
+            ).value;
+
+        const glucoseValue =
+            document.getElementById(
+                "glucose"
+            ).value;
+
+        const notes =
+            document.getElementById(
+                "notes"
+            ).value;
+
+        const stateOfDay =
+            document.getElementById(
+                "stateOfDay"
+            ).value;
+
+
+        try {
+
+            showStatus(
+                "Salvez jurnalul...",
+                "info"
+            );
+
+
+            const dayResponse =
+                await fetch(
+                    "/entries",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body: JSON.stringify({
+
+                            date: date,
+
+                            weight:
+                                weightValue
+                                    ? Number(weightValue)
+                                    : null,
+
+                            glucose:
+                                glucoseValue
+                                    ? Number(glucoseValue)
+                                    : null,
+
+                            notes:
+                                notes || null,
+
+                            state_of_day:
+                                stateOfDay || null
+                        })
+                    }
+                );
+
+
+            if (!dayResponse.ok) {
+
+                throw new Error(
+                    "Could not save day."
+                );
+            }
+
+
+            const dayResult =
+                await dayResponse.json();
+
+
+            const journalResponse =
+                await fetch(
+                    `/days/${dayResult.id}/replace-journal`,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body: JSON.stringify({
+
+                            foods:
+                                interpretedJournal.foods || [],
+
+                            liquids:
+                                interpretedJournal.liquids || [],
+
+                            supplements:
+                                interpretedJournal.supplements || [],
+
+                            activities:
+                                interpretedJournal.activities || []
+
+                        })
+                    }
+                );
+
+
+            if (!journalResponse.ok) {
+
+                const errorData =
+                    await journalResponse.json();
+
+                throw new Error(
+                    errorData.detail ||
+                    "Could not save journal."
+                );
+            }
+
+
+            showStatus(
+                "✓ Jurnal, stare și suplimente salvate în PostgreSQL.",
+                "success"
+            );
+
+
+            await loadDashboard();
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            showStatus(
+                "Eroare la salvarea jurnalului: " +
+                error.message,
+                "error"
+            );
+
+            saveButton.disabled = false;
+        }
+
+    }
+
+
+    function buildLineChart(
+        existingChart,
+        canvasId,
+        labels,
+        values,
+        label
+    ) {
+
+        if (existingChart) {
+            existingChart.destroy();
+        }
+
+
+        return new Chart(
+            document.getElementById(
+                canvasId
+            ),
+            {
+                type: "line",
+
+                data: {
+
+                    labels: labels,
+
+                    datasets: [
+                        {
+                            label: label,
+                            data: values,
+                            tension: 0.25
+                        }
+                    ]
+
+                },
+
+                options: {
+
+                    responsive: true,
+                    maintainAspectRatio: false
+
+                }
+
+            }
+        );
+    }
+
+
+    function renderDailyTable(entries) {
+
+        const body =
+            document.getElementById(
+                "dailyTableBody"
+            );
+
+
+        if (!entries.length) {
+
+            body.innerHTML = `
+                <tr>
+                    <td colspan="9">
+                        No data for selected range.
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+
+        body.innerHTML =
+            entries.map(
+                item => {
+
+                    const intake =
+                        safeNumber(
+                            item.summary.calories
+                        );
+
+                    const activity =
+                        safeNumber(
+                            item.summary.activity_calories
+                        );
+
+                    const afterActivity =
+                        safeNumber(
+                            item.summary.after_activity
+                        );
+
+                    return `
+
+                        <tr>
+
+                            <td>
+                                ${item.date}
+                            </td>
+
+                            <td>
+                                ${
+                                    item.weight !== null
+                                        ? item.weight + " kg"
+                                        : "—"
+                                }
+                            </td>
+
+                            <td>
+                                ${
+                                    item.glucose !== null
+                                        ? item.glucose
+                                        : "—"
+                                }
+                            </td>
+
+                            <td>
+                                ${intake} kcal
+                            </td>
+
+                            <td>
+                                ${safeNumber(item.summary.protein)} g
+                            </td>
+
+                            <td>
+                                ${safeNumber(item.summary.liquids_ml)} ml
+                            </td>
+
+                            <td class="activity-minus">
+                                ${
+                                    activity > 0
+                                        ? "−" + activity + " kcal"
+                                        : "—"
+                                }
+                            </td>
+
+                            <td class="after-activity">
+                                ${afterActivity} kcal
+                            </td>
+
+                            <td class="state-cell">
+                                ${safeText(item.state_of_day)}
+                            </td>
+
+                        </tr>
+
+                    `;
+                }
+            ).join("");
+    }
+
+
+    function renderSupplementTable(items) {
+
+        const body =
+            document.getElementById(
+                "supplementTableBody"
+            );
+
+
+        if (!items.length) {
+
+            body.innerHTML = `
+                <tr>
+                    <td colspan="10">
+                        Nu există încă suplimente salvate.
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+
+        body.innerHTML =
+            items.map(
+                item => `
+
+                    <tr>
+
+                        <td class="supplement-name">
+                            ${safeText(item.supplement_name)}
+                        </td>
+
+                        <td>
+                            ${safeText(item.purpose)}
+                        </td>
+
+                        <td>
+                            ${safeText(item.usual_dose)}
+                        </td>
+
+                        <td>
+                            ${safeText(item.usual_timing)}
+                        </td>
+
+                        <td>
+                            ${safeText(item.last_quantity)}
+                        </td>
+
+                        <td>
+                            ${safeText(item.last_timing)}
+                        </td>
+
+                        <td>
+                            ${safeText(item.first_taken)}
+                        </td>
+
+                        <td>
+                            ${safeText(item.last_taken)}
+                        </td>
+
+                        <td>
+                            ${safeNumber(item.times_logged)}
+                        </td>
+
+                        <td class="state-cell">
+                            ${safeText(item.notes)}
+                        </td>
+
+                    </tr>
+
+                `
+            ).join("");
+    }
+
+
+    function setCurrentMonth() {
+
+        const now =
+            new Date();
+
+        const year =
+            now.getFullYear();
+
+        const month =
+            String(
+                now.getMonth() + 1
+            ).padStart(
+                2,
+                "0"
+            );
+
+        const lastDay =
+            new Date(
+                year,
+                now.getMonth() + 1,
+                0
+            ).getDate();
+
+
+        document.getElementById(
+            "rangeStart"
+        ).value =
+            `${year}-${month}-01`;
+
+
+        document.getElementById(
+            "rangeEnd"
+        ).value =
+            `${year}-${month}-${String(lastDay).padStart(2, "0")}`;
+
+
+        loadDashboard();
+    }
+
+
+    function showAllDates() {
+
+        document.getElementById(
+            "rangeStart"
+        ).value = "";
+
+        document.getElementById(
+            "rangeEnd"
+        ).value = "";
+
+        loadDashboard();
+    }
+
+
+    async function loadDashboard() {
+
+        try {
+
+            const [
+                entriesResponse,
+                supplementResponse
+            ] = await Promise.all([
+                fetch("/entries"),
+                fetch("/supplements/summary")
+            ]);
+
+
+            const entries =
+                await entriesResponse.json();
+
+            const supplements =
+                await supplementResponse.json();
+
+
+            const rangeStart =
+                document.getElementById(
+                    "rangeStart"
+                ).value;
+
+            const rangeEnd =
+                document.getElementById(
+                    "rangeEnd"
+                ).value;
+
+
+            const filtered =
+                entries.filter(
+                    item => {
+
+                        if (
+                            rangeStart &&
+                            item.date < rangeStart
+                        ) {
+                            return false;
+                        }
+
+                        if (
+                            rangeEnd &&
+                            item.date > rangeEnd
+                        ) {
+                            return false;
+                        }
+
+                        return true;
+                    }
+                );
+
+
+            const ordered =
+                [...filtered].reverse();
+
+
+            const weightEntries =
+                ordered.filter(
+                    item =>
+                        item.weight !== null
+                );
+
+
+            const glucoseEntries =
+                ordered.filter(
+                    item =>
+                        item.glucose !== null
+                );
+
+
+            weightChart =
+                buildLineChart(
+                    weightChart,
+                    "weightChart",
+
+                    weightEntries.map(
+                        item => item.date
+                    ),
+
+                    weightEntries.map(
+                        item => item.weight
+                    ),
+
+                    "Weight (kg)"
+                );
+
+
+            glucoseChart =
+                buildLineChart(
+                    glucoseChart,
+                    "glucoseChart",
+
+                    glucoseEntries.map(
+                        item => item.date
+                    ),
+
+                    glucoseEntries.map(
+                        item => item.glucose
+                    ),
+
+                    "Glucose (mg/dL)"
+                );
+
+
+            calorieChart =
+                buildLineChart(
+                    calorieChart,
+                    "calorieChart",
+
+                    ordered.map(
+                        item => item.date
+                    ),
+
+                    ordered.map(
+                        item =>
+                            safeNumber(
+                                item.summary.calories
+                            )
+                    ),
+
+                    "Calories (kcal)"
+                );
+
+
+            proteinChart =
+                buildLineChart(
+                    proteinChart,
+                    "proteinChart",
+
+                    ordered.map(
+                        item => item.date
+                    ),
+
+                    ordered.map(
+                        item =>
+                            safeNumber(
+                                item.summary.protein
+                            )
+                    ),
+
+                    "Protein (g)"
+                );
+
+
+            renderDailyTable(
+                filtered
+            );
+
+
+            renderSupplementTable(
+                supplements
+            );
+
+
+            const latestWeight =
+                entries.find(
+                    item =>
+                        item.weight !== null
+                );
+
+
+            const weightInput =
+                document.getElementById(
+                    "weight"
+                );
+
+
+            if (
+                latestWeight &&
+                !weightInput.value
+            ) {
+
+                weightInput.value =
+                    latestWeight.weight;
+
+                updateBMI();
+            }
+
+
+        } catch (error) {
+
+            console.error(
+                "Dashboard error:",
+                error
+            );
+        }
+
+    }
+
+
+    initializeHeight();
+
+    setCurrentMonth();
+
+</script>
+
+</body>
+
+</html>
