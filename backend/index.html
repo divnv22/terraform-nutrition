@@ -439,6 +439,136 @@
             font-size: 13px;
         }
 
+        .auth-screen {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 20px;
+            background:
+                linear-gradient(
+                    135deg,
+                    #f5f6f8 0%,
+                    #eceff3 100%
+                );
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 520px;
+            background: white;
+            border-radius: 22px;
+            padding: 32px;
+            box-shadow: 0 14px 45px rgba(0, 0, 0, 0.09);
+        }
+
+        .auth-logo {
+            font-size: 30px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .auth-subtitle {
+            color: #777;
+            margin-top: 0;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .auth-tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            padding: 5px;
+            background: #f1f2f5;
+            border-radius: 12px;
+            margin-bottom: 22px;
+        }
+
+        .auth-tab {
+            background: transparent;
+            color: #666;
+            padding: 10px;
+        }
+
+        .auth-tab.active {
+            background: white;
+            color: #222;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .auth-field {
+            margin-bottom: 15px;
+        }
+
+        .auth-submit {
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        .auth-message {
+            display: none;
+            padding: 11px 13px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .auth-message.error {
+            display: block;
+            background: #ffecec;
+            color: #8d2525;
+        }
+
+        .auth-message.success {
+            display: block;
+            background: #eaf8ee;
+            color: #276a3a;
+        }
+
+        .app-container {
+            display: none;
+        }
+
+        .app-container.authenticated {
+            display: block;
+        }
+
+        .user-bar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .user-badge {
+            padding: 9px 13px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 18px rgba(0, 0, 0, 0.05);
+            font-size: 13px;
+            color: #555;
+        }
+
+        .user-badge strong {
+            color: #222;
+        }
+
+        .logout-button {
+            padding: 9px 13px;
+            font-size: 13px;
+        }
+
         @media (max-width: 800px) {
 
             .header-row {
@@ -464,7 +594,193 @@
 
 <body>
 
-<div class="container">
+<div
+    id="authScreen"
+    class="auth-screen"
+>
+
+    <div class="auth-card">
+
+        <div class="auth-logo">
+            ✨ Nutrition AI
+        </div>
+
+        <p class="auth-subtitle">
+            Jurnalul tău personal de nutriție,
+            stare, suplimente și activitate.
+        </p>
+
+        <div class="auth-tabs">
+
+            <button
+                type="button"
+                id="loginTab"
+                class="auth-tab active"
+                onclick="showAuthTab('login')"
+            >
+                Login
+            </button>
+
+            <button
+                type="button"
+                id="registerTab"
+                class="auth-tab"
+                onclick="showAuthTab('register')"
+            >
+                Create account
+            </button>
+
+        </div>
+
+
+        <form
+            id="loginForm"
+            class="auth-form active"
+            onsubmit="loginUser(event)"
+        >
+
+            <div class="auth-field">
+
+                <label for="loginUsername">
+                    Username
+                </label>
+
+                <input
+                    id="loginUsername"
+                    type="text"
+                    autocomplete="username"
+                    required
+                >
+
+            </div>
+
+
+            <div class="auth-field">
+
+                <label for="loginPassword">
+                    Password
+                </label>
+
+                <input
+                    id="loginPassword"
+                    type="password"
+                    autocomplete="current-password"
+                    required
+                >
+
+            </div>
+
+
+            <button
+                id="loginButton"
+                class="primary-button auth-submit"
+                type="submit"
+            >
+                Login
+            </button>
+
+        </form>
+
+
+        <form
+            id="registerForm"
+            class="auth-form"
+            onsubmit="registerUser(event)"
+        >
+
+            <div class="auth-field">
+
+                <label for="registerUsername">
+                    Username
+                </label>
+
+                <input
+                    id="registerUsername"
+                    type="text"
+                    minlength="3"
+                    maxlength="50"
+                    autocomplete="username"
+                    required
+                >
+
+            </div>
+
+
+            <div class="auth-field">
+
+                <label for="registerEmail">
+                    Email
+                </label>
+
+                <input
+                    id="registerEmail"
+                    type="email"
+                    autocomplete="email"
+                    required
+                >
+
+            </div>
+
+
+            <div class="auth-field">
+
+                <label for="registerPassword">
+                    Password
+                </label>
+
+                <input
+                    id="registerPassword"
+                    type="password"
+                    minlength="8"
+                    maxlength="128"
+                    autocomplete="new-password"
+                    required
+                >
+
+            </div>
+
+
+            <button
+                id="registerButton"
+                class="primary-button auth-submit"
+                type="submit"
+            >
+                Create account
+            </button>
+
+        </form>
+
+
+        <div
+            id="authMessage"
+            class="auth-message"
+        ></div>
+
+    </div>
+
+</div>
+
+
+<div
+    id="appContainer"
+    class="container app-container"
+>
+
+    <div class="user-bar">
+
+        <div class="user-badge">
+            Logged in as
+            <strong id="currentUsername"></strong>
+        </div>
+
+        <button
+            class="secondary-button logout-button"
+            onclick="logoutUser()"
+        >
+            Logout
+        </button>
+
+    </div>
 
 
     <div class="header-row">
@@ -1023,6 +1339,8 @@
 
     let interpretedJournal = null;
 
+    let currentUser = null;
+
     let weightChart = null;
     let glucoseChart = null;
     let calorieChart = null;
@@ -1031,6 +1349,408 @@
 
     document.getElementById("date").value =
         new Date().toISOString().split("T")[0];
+
+
+    function showAuthTab(tab) {
+
+        const loginForm =
+            document.getElementById("loginForm");
+
+        const registerForm =
+            document.getElementById("registerForm");
+
+        const loginTab =
+            document.getElementById("loginTab");
+
+        const registerTab =
+            document.getElementById("registerTab");
+
+        const message =
+            document.getElementById("authMessage");
+
+
+        message.className =
+            "auth-message";
+
+        message.textContent =
+            "";
+
+
+        if (tab === "register") {
+
+            loginForm.classList.remove("active");
+            registerForm.classList.add("active");
+
+            loginTab.classList.remove("active");
+            registerTab.classList.add("active");
+
+        } else {
+
+            registerForm.classList.remove("active");
+            loginForm.classList.add("active");
+
+            registerTab.classList.remove("active");
+            loginTab.classList.add("active");
+        }
+
+    }
+
+
+    function showAuthMessage(message, type) {
+
+        const element =
+            document.getElementById(
+                "authMessage"
+            );
+
+        element.className =
+            "auth-message " + type;
+
+        element.textContent =
+            message;
+    }
+
+
+    function showApplication(user) {
+
+        currentUser =
+            user;
+
+        document.getElementById(
+            "currentUsername"
+        ).textContent =
+            user.username;
+
+        document.getElementById(
+            "authScreen"
+        ).style.display =
+            "none";
+
+        document.getElementById(
+            "appContainer"
+        ).classList.add(
+            "authenticated"
+        );
+    }
+
+
+    function showLoginScreen() {
+
+        currentUser =
+            null;
+
+        document.getElementById(
+            "appContainer"
+        ).classList.remove(
+            "authenticated"
+        );
+
+        document.getElementById(
+            "authScreen"
+        ).style.display =
+            "flex";
+
+        showAuthTab(
+            "login"
+        );
+    }
+
+
+    async function getCurrentUser() {
+
+        try {
+
+            const response =
+                await fetch(
+                    "/auth/me",
+                    {
+                        credentials:
+                            "same-origin"
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                return null;
+            }
+
+
+            return await response.json();
+
+
+        } catch (error) {
+
+            console.error(
+                "Authentication check failed:",
+                error
+            );
+
+            return null;
+        }
+
+    }
+
+
+    async function loginUser(event) {
+
+        event.preventDefault();
+
+
+        const username =
+            document.getElementById(
+                "loginUsername"
+            ).value.trim();
+
+        const password =
+            document.getElementById(
+                "loginPassword"
+            ).value;
+
+        const button =
+            document.getElementById(
+                "loginButton"
+            );
+
+
+        button.disabled =
+            true;
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "/auth/login",
+                    {
+                        method: "POST",
+
+                        credentials:
+                            "same-origin",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body: JSON.stringify({
+                            username:
+                                username,
+
+                            password:
+                                password
+                        })
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.detail ||
+                    "Login failed."
+                );
+            }
+
+
+            const user =
+                data.user || data;
+
+
+            showApplication(
+                user
+            );
+
+
+            document.getElementById(
+                "loginPassword"
+            ).value =
+                "";
+
+
+            setCurrentMonth();
+
+
+        } catch (error) {
+
+            showAuthMessage(
+                error.message,
+                "error"
+            );
+
+
+        } finally {
+
+            button.disabled =
+                false;
+        }
+
+    }
+
+
+    async function registerUser(event) {
+
+        event.preventDefault();
+
+
+        const username =
+            document.getElementById(
+                "registerUsername"
+            ).value.trim();
+
+        const email =
+            document.getElementById(
+                "registerEmail"
+            ).value.trim();
+
+        const password =
+            document.getElementById(
+                "registerPassword"
+            ).value;
+
+        const button =
+            document.getElementById(
+                "registerButton"
+            );
+
+
+        button.disabled =
+            true;
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "/auth/register",
+                    {
+                        method: "POST",
+
+                        credentials:
+                            "same-origin",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body: JSON.stringify({
+                            username:
+                                username,
+
+                            email:
+                                email,
+
+                            password:
+                                password
+                        })
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.detail ||
+                    "Could not create account."
+                );
+            }
+
+
+            const user =
+                data.user || data;
+
+
+            showApplication(
+                user
+            );
+
+
+            document.getElementById(
+                "registerPassword"
+            ).value =
+                "";
+
+
+            setCurrentMonth();
+
+
+        } catch (error) {
+
+            showAuthMessage(
+                error.message,
+                "error"
+            );
+
+
+        } finally {
+
+            button.disabled =
+                false;
+        }
+
+    }
+
+
+    async function logoutUser() {
+
+        try {
+
+            await fetch(
+                "/auth/logout",
+                {
+                    method: "POST",
+
+                    credentials:
+                        "same-origin"
+                }
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Logout error:",
+                error
+            );
+        }
+
+
+        showLoginScreen();
+    }
+
+
+    async function initializeApplication() {
+
+        initializeHeight();
+
+
+        const user =
+            await getCurrentUser();
+
+
+        if (!user) {
+
+            showLoginScreen();
+
+            return;
+        }
+
+
+        showApplication(
+            user
+        );
+
+
+        setCurrentMonth();
+    }
 
 
     function safeNumber(value) {
@@ -2173,6 +2893,28 @@
             ]);
 
 
+            if (
+                entriesResponse.status === 401 ||
+                supplementResponse.status === 401
+            ) {
+
+                showLoginScreen();
+
+                return;
+            }
+
+
+            if (
+                !entriesResponse.ok ||
+                !supplementResponse.ok
+            ) {
+
+                throw new Error(
+                    "Could not load dashboard data."
+                );
+            }
+
+
             const entries =
                 await entriesResponse.json();
 
@@ -2352,9 +3094,7 @@
     }
 
 
-    initializeHeight();
-
-    setCurrentMonth();
+    initializeApplication();
 
 </script>
 

@@ -1,19 +1,102 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Float,
+    ForeignKey,
+    UniqueConstraint
+)
 from sqlalchemy.orm import relationship
 
 from backend.database import Base
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    username = Column(
+        String,
+        nullable=False,
+        unique=True,
+        index=True
+    )
+
+    email = Column(
+        String,
+        nullable=False,
+        unique=True,
+        index=True
+    )
+
+    password_hash = Column(
+        String,
+        nullable=False
+    )
+
+    daily_entries = relationship(
+        "DailyEntry",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+
+    supplement_profiles = relationship(
+        "SupplementProfile",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+
+
 class DailyEntry(Base):
     __tablename__ = "daily_entries"
 
-    id = Column(Integer, primary_key=True, index=True)
-    date = Column(String, nullable=False)
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
 
-    weight = Column(Float, nullable=True)
-    glucose = Column(Float, nullable=True)
-    notes = Column(String, nullable=True)
-    state_of_day = Column(String, nullable=True)
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True
+    )
+
+    date = Column(
+        String,
+        nullable=False
+    )
+
+    weight = Column(
+        Float,
+        nullable=True
+    )
+
+    glucose = Column(
+        Float,
+        nullable=True
+    )
+
+    notes = Column(
+        String,
+        nullable=True
+    )
+
+    state_of_day = Column(
+        String,
+        nullable=True
+    )
+
+    user = relationship(
+        "User",
+        back_populates="daily_entries"
+    )
 
     foods = relationship(
         "FoodEntry",
@@ -49,7 +132,10 @@ class DailyEntry(Base):
 class FoodEntry(Base):
     __tablename__ = "food_entries"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(
+        Integer,
+        primary_key=True
+    )
 
     daily_entry_id = Column(
         Integer,
@@ -57,12 +143,30 @@ class FoodEntry(Base):
         nullable=False
     )
 
-    meal_type = Column(String, nullable=False)
-    food_name = Column(String, nullable=False)
-    quantity = Column(String, nullable=True)
+    meal_type = Column(
+        String,
+        nullable=False
+    )
 
-    calories = Column(Float, nullable=True)
-    protein = Column(Float, nullable=True)
+    food_name = Column(
+        String,
+        nullable=False
+    )
+
+    quantity = Column(
+        String,
+        nullable=True
+    )
+
+    calories = Column(
+        Float,
+        nullable=True
+    )
+
+    protein = Column(
+        Float,
+        nullable=True
+    )
 
     day = relationship(
         "DailyEntry",
@@ -73,7 +177,10 @@ class FoodEntry(Base):
 class LiquidEntry(Base):
     __tablename__ = "liquid_entries"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(
+        Integer,
+        primary_key=True
+    )
 
     daily_entry_id = Column(
         Integer,
@@ -81,9 +188,20 @@ class LiquidEntry(Base):
         nullable=False
     )
 
-    drink_name = Column(String, nullable=False)
-    amount_ml = Column(Float, nullable=True)
-    calories = Column(Float, nullable=True)
+    drink_name = Column(
+        String,
+        nullable=False
+    )
+
+    amount_ml = Column(
+        Float,
+        nullable=True
+    )
+
+    calories = Column(
+        Float,
+        nullable=True
+    )
 
     day = relationship(
         "DailyEntry",
@@ -94,7 +212,10 @@ class LiquidEntry(Base):
 class SupplementEntry(Base):
     __tablename__ = "supplement_entries"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(
+        Integer,
+        primary_key=True
+    )
 
     daily_entry_id = Column(
         Integer,
@@ -102,9 +223,20 @@ class SupplementEntry(Base):
         nullable=False
     )
 
-    supplement_name = Column(String, nullable=False)
-    time_of_day = Column(String, nullable=True)
-    quantity = Column(String, nullable=True)
+    supplement_name = Column(
+        String,
+        nullable=False
+    )
+
+    time_of_day = Column(
+        String,
+        nullable=True
+    )
+
+    quantity = Column(
+        String,
+        nullable=True
+    )
 
     day = relationship(
         "DailyEntry",
@@ -115,24 +247,64 @@ class SupplementEntry(Base):
 class SupplementProfile(Base):
     __tablename__ = "supplement_profiles"
 
-    id = Column(Integer, primary_key=True)
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "supplement_name",
+            name="uq_supplement_profiles_user_name"
+        ),
+    )
+
+    id = Column(
+        Integer,
+        primary_key=True
+    )
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True
+    )
 
     supplement_name = Column(
         String,
-        nullable=False,
-        unique=True
+        nullable=False
     )
 
-    purpose = Column(String, nullable=True)
-    usual_dose = Column(String, nullable=True)
-    usual_timing = Column(String, nullable=True)
-    notes = Column(String, nullable=True)
+    purpose = Column(
+        String,
+        nullable=True
+    )
+
+    usual_dose = Column(
+        String,
+        nullable=True
+    )
+
+    usual_timing = Column(
+        String,
+        nullable=True
+    )
+
+    notes = Column(
+        String,
+        nullable=True
+    )
+
+    user = relationship(
+        "User",
+        back_populates="supplement_profiles"
+    )
 
 
 class ActivityEntry(Base):
     __tablename__ = "activity_entries"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(
+        Integer,
+        primary_key=True
+    )
 
     daily_entry_id = Column(
         Integer,
@@ -146,8 +318,15 @@ class ActivityEntry(Base):
         default="Walking"
     )
 
-    distance_km = Column(Float, nullable=True)
-    calories_burned = Column(Float, nullable=True)
+    distance_km = Column(
+        Float,
+        nullable=True
+    )
+
+    calories_burned = Column(
+        Float,
+        nullable=True
+    )
 
     day = relationship(
         "DailyEntry",
@@ -158,7 +337,10 @@ class ActivityEntry(Base):
 class MeasurementEntry(Base):
     __tablename__ = "measurement_entries"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(
+        Integer,
+        primary_key=True
+    )
 
     daily_entry_id = Column(
         Integer,
@@ -166,8 +348,15 @@ class MeasurementEntry(Base):
         nullable=False
     )
 
-    systolic = Column(Float, nullable=True)
-    diastolic = Column(Float, nullable=True)
+    systolic = Column(
+        Float,
+        nullable=True
+    )
+
+    diastolic = Column(
+        Float,
+        nullable=True
+    )
 
     day = relationship(
         "DailyEntry",

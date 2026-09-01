@@ -1,0 +1,21 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: selfsigned-issuer
+  namespace: nutrition-dev
+spec:
+  selfSigned: {}
+
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nutrition-selfsigned-cert
+  namespace: nutrition-dev
+spec:
+  secretName: nutrition-tls
+  dnsNames:
+    - dana-nutrition-tracker.swedencentral.cloudapp.azure.com
+  issuerRef:
+    name: selfsigned-issuer
+    kind: Issuer

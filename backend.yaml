@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nutrition-backend
+  namespace: nutrition-dev
+  labels:
+    app: nutrition-backend
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: nutrition-backend
+
+  template:
+    metadata:
+      labels:
+        app: nutrition-backend
+
+    spec:
+      containers:
+        - name: nutrition-backend
+          image: acrdananutritiondev.azurecr.io/nutrition-backend:final-mvp-v5
+          imagePullPolicy: Always
+
+          command:
+            - uvicorn
+
+          args:
+            - backend.main:app
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8000"
+            - --ssl-keyfile
+            - /tls/tls.key
+            - --ssl-certfile
+            - /tls/tls.crt
+
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nutrition-db-secret
+                  key: DATABASE_URL
+
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openai-api-key
+                  key: OPENAI_API_KEY
+
+          volumeMounts:
+            - name: tls
+              mountPath: /tls
+              readOnly: true
+
+      volumes:
+        - name: tls
+          secret:
+            secretName: nutrition-tls
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nutrition-backend
+  namespace: nutrition-dev
+  labels:
+    app: nutrition-backend
+  annotations:
+    service.beta.kubernetes.io/azure-dns-label-name: dana-nutrition-tracker
+
+spec:
+  type: LoadBalancer
+
+  selector:
+    app: nutrition-backend
+
+  ports:
+    - name: https
+      port: 443
+      targetPort: 8000
+      protocol: TCP

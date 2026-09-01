@@ -1,4 +1,5 @@
 import base64
+import os
 
 from fastapi import (
     FastAPI,
@@ -6,9 +7,12 @@ from fastapi import (
     HTTPException,
     UploadFile,
     File,
-    Form
+    Form,
+    Request
 )
 from fastapi.responses import FileResponse
+from starlette.middleware.sessions import SessionMiddleware
+from passlib.context import CryptContext
 from pydantic import BaseModel, Field
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -19,6 +23,36 @@ from backend import models
 
 
 app = FastAPI()
+
+SESSION_SECRET = os.environ.get("SESSION_SECRET")
+
+if not SESSION_SECRET:
+    raise RuntimeError(
+        "SESSION_SECRET environment variable is required."
+    )
+
+SESSION_COOKIE_SECURE = (
+    os.environ.get(
+        "SESSION_COOKIE_SECURE",
+        "false"
+    ).lower()
+    == "true"
+)
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=SESSION_SECRET,
+    session_cookie="nutrition_session",
+    max_age=60 * 60 * 24 * 30,
+    same_site="lax",
+    https_only=SESSION_COOKIE_SECURE
+)
+
+password_context = CryptContext(
+    schemes=["pbkdf2_sha256"],
+    deprecated="auto"
+)
+
 client = OpenAI()
 
 Base.metadata.create_all(bind=engine)
@@ -36,6 +70,28 @@ def get_db():
 # ============================================================
 # REQUEST MODELS
 # ============================================================
+
+
+class RegisterRequest(BaseModel):
+    username: str = Field(
+        min_length=3,
+        max_length=50
+    )
+
+    email: str = Field(
+        min_length=5,
+        max_length=255
+    )
+
+    password: str = Field(
+        min_length=8,
+        max_length=128
+    )
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
 
 
 class DailyEntryCreate(BaseModel):
@@ -247,10 +303,17 @@ AI_SYSTEM_PROMPT = (
 # ============================================================
 
 
-def get_day_or_404(day_id: int, db: Session):
+def get_day_or_404(
+    day_id: int,
+    db: Session,
+    current_user: models.User
+):
     day = (
         db.query(models.DailyEntry)
-        .filter(models.DailyEntry.id == day_id)
+        .filter(
+            models.DailyEntry.id == day_id,
+            models.DailyEntry.user_id == current_user.id
+        )
         .first()
     )
 
@@ -312,7 +375,8 @@ def calculate_day_summary(day):
 
 def upsert_supplement_profile(
     db: Session,
-    supplement: SupplementCreate
+    supplement: SupplementCreate,
+    current_user: models.User
 ):
     name = supplement.supplement_name.strip()
 
@@ -322,6 +386,8 @@ def upsert_supplement_profile(
     profile = (
         db.query(models.SupplementProfile)
         .filter(
+            models.SupplementProfile.user_id
+            == current_user.id,
             func.lower(
                 models.SupplementProfile.supplement_name
             ) == name.lower()
@@ -331,6 +397,7 @@ def upsert_supplement_profile(
 
     if profile is None:
         profile = models.SupplementProfile(
+            user_id=current_user.id,
             supplement_name=name
         )
 
@@ -443,6 +510,180 @@ def merge_duplicate_supplements(supplements):
 
 
 # ============================================================
+# AUTHENTICATION
+# ============================================================
+
+
+def get_current_user(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    user_id = request.session.get("user_id")
+
+    if user_id is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required"
+        )
+
+    user = (
+        db.query(models.User)
+        .filter(models.User.id == user_id)
+        .first()
+    )
+
+    if user is None:
+        request.session.clear()
+
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid session"
+        )
+
+    return user
+
+
+@app.post("/auth/register")
+def register(
+    data: RegisterRequest,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    username = data.username.strip()
+    email = data.email.strip().lower()
+
+    if len(username) < 3:
+        raise HTTPException(
+            status_code=400,
+            detail="Username must have at least 3 characters"
+        )
+
+    if "@" not in email or "." not in email.split("@")[-1]:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid email address"
+        )
+
+    existing_username = (
+        db.query(models.User)
+        .filter(
+            func.lower(models.User.username)
+            == username.lower()
+        )
+        .first()
+    )
+
+    if existing_username:
+        raise HTTPException(
+            status_code=409,
+            detail="Username already exists"
+        )
+
+    existing_email = (
+        db.query(models.User)
+        .filter(
+            func.lower(models.User.email)
+            == email
+        )
+        .first()
+    )
+
+    if existing_email:
+        raise HTTPException(
+            status_code=409,
+            detail="Email already exists"
+        )
+
+    user = models.User(
+        username=username,
+        email=email,
+        password_hash=password_context.hash(
+            data.password
+        )
+    )
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    request.session.clear()
+    request.session["user_id"] = user.id
+
+    return {
+        "message": "Account created",
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email
+        }
+    }
+
+
+@app.post("/auth/login")
+def login(
+    data: LoginRequest,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    username = data.username.strip()
+
+    user = (
+        db.query(models.User)
+        .filter(
+            func.lower(models.User.username)
+            == username.lower()
+        )
+        .first()
+    )
+
+    if (
+        user is None
+        or not password_context.verify(
+            data.password,
+            user.password_hash
+        )
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid username or password"
+        )
+
+    request.session.clear()
+    request.session["user_id"] = user.id
+
+    return {
+        "message": "Logged in",
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email
+        }
+    }
+
+
+@app.post("/auth/logout")
+def logout(request: Request):
+    request.session.clear()
+
+    return {
+        "message": "Logged out"
+    }
+
+
+@app.get("/auth/me")
+def auth_me(
+    current_user: models.User = Depends(
+        get_current_user
+    )
+):
+    return {
+        "id": current_user.id,
+        "username": current_user.username,
+        "email": current_user.email
+    }
+
+
+# ============================================================
 # FRONTEND
 # ============================================================
 
@@ -460,7 +701,10 @@ def home():
 @app.post("/ai/analyze")
 async def analyze_journal(
     text: str = Form(""),
-    images: list[UploadFile] | None = File(None)
+    images: list[UploadFile] | None = File(None),
+    current_user: models.User = Depends(
+        get_current_user
+    )
 ):
     try:
         text = text.strip()
@@ -632,10 +876,17 @@ async def analyze_journal(
 
 @app.get("/entries")
 def get_entries(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(
+        get_current_user
+    )
 ):
     entries = (
         db.query(models.DailyEntry)
+        .filter(
+            models.DailyEntry.user_id
+            == current_user.id
+        )
         .order_by(models.DailyEntry.date.desc())
         .all()
     )
@@ -663,13 +914,18 @@ def get_entries(
 @app.post("/entries")
 def create_entry(
     entry: DailyEntryCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(
+        get_current_user
+    )
 ):
     existing = (
         db.query(models.DailyEntry)
         .filter(
             models.DailyEntry.date
-            == entry.date
+            == entry.date,
+            models.DailyEntry.user_id
+            == current_user.id
         )
         .first()
     )
@@ -691,6 +947,7 @@ def create_entry(
         }
 
     db_entry = models.DailyEntry(
+        user_id=current_user.id,
         date=entry.date,
         weight=entry.weight,
         glucose=entry.glucose,
@@ -717,11 +974,15 @@ def create_entry(
 def replace_journal(
     day_id: int,
     journal: ReplaceJournalRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(
+        get_current_user
+    )
 ):
     day = get_day_or_404(
         day_id,
-        db
+        db,
+        current_user
     )
 
     try:
@@ -828,7 +1089,8 @@ def replace_journal(
 
             upsert_supplement_profile(
                 db,
-                supplement
+                supplement,
+                current_user
             )
 
         # ----------------------------------------------------
@@ -894,11 +1156,18 @@ def replace_journal(
 
 @app.get("/supplements/summary")
 def supplement_summary(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(
+        get_current_user
+    )
 ):
     profiles = (
         db.query(
             models.SupplementProfile
+        )
+        .filter(
+            models.SupplementProfile.user_id
+            == current_user.id
         )
         .all()
     )
@@ -912,6 +1181,10 @@ def supplement_summary(
             models.DailyEntry,
             models.SupplementEntry.daily_entry_id
             == models.DailyEntry.id
+        )
+        .filter(
+            models.DailyEntry.user_id
+            == current_user.id
         )
         .all()
     )
@@ -1079,11 +1352,15 @@ def supplement_summary(
 def add_food(
     day_id: int,
     food: FoodCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(
+        get_current_user
+    )
 ):
     get_day_or_404(
         day_id,
-        db
+        db,
+        current_user
     )
 
     db_food = models.FoodEntry(
@@ -1109,11 +1386,15 @@ def add_food(
 def add_liquid(
     day_id: int,
     liquid: LiquidCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(
+        get_current_user
+    )
 ):
     get_day_or_404(
         day_id,
-        db
+        db,
+        current_user
     )
 
     db_liquid = models.LiquidEntry(
@@ -1137,11 +1418,15 @@ def add_liquid(
 def add_supplement(
     day_id: int,
     supplement: SupplementCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(
+        get_current_user
+    )
 ):
     get_day_or_404(
         day_id,
-        db
+        db,
+        current_user
     )
 
     try:
@@ -1166,7 +1451,8 @@ def add_supplement(
 
         upsert_supplement_profile(
             db,
-            supplement
+            supplement,
+            current_user
         )
 
         db.commit()
@@ -1200,11 +1486,15 @@ def add_supplement(
 def add_activity(
     day_id: int,
     activity: ActivityCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(
+        get_current_user
+    )
 ):
     day = get_day_or_404(
         day_id,
-        db
+        db,
+        current_user
     )
 
     calories_burned = None
@@ -1254,11 +1544,15 @@ def add_activity(
 def add_measurement(
     day_id: int,
     measurement: MeasurementCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(
+        get_current_user
+    )
 ):
     get_day_or_404(
         day_id,
-        db
+        db,
+        current_user
     )
 
     db_measurement = (
@@ -1292,11 +1586,15 @@ def add_measurement(
 @app.get("/days/{day_id}")
 def get_full_day(
     day_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(
+        get_current_user
+    )
 ):
     day = get_day_or_404(
         day_id,
-        db
+        db,
+        current_user
     )
 
     return {
